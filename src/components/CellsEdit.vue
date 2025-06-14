@@ -205,8 +205,8 @@ function toggleCellSelection(row: number, col: number) {
     </div>
 
     <div class="footer">
-      <div>* <kbd>Ctrl+Click</kbd> to select</div>
-      <div>* Format: <code>sheet!(row, col): content</code></div>
+      <div>* <kbd>Click</kbd> to select</div>
+      <div>* Format: <code>sheet!(row,col): content</code></div>
     </div>
   </div>
 </template>
