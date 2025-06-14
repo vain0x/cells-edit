@@ -3,6 +3,7 @@ declare global {
 }
 
 export interface XlsxPopulate {
+  fromBlankAsync(): Promise<Workbook>
   fromDataAsync(data: Uint8Array, opts?: unknown): Promise<Workbook>
   // fromFileAsync(filename: string): Promise<Workbook>
 }
@@ -10,6 +11,7 @@ export interface XlsxPopulate {
 export declare class Workbook {
   sheets(): Sheet[]
   sheet(sheetNameOrIndex: string | number): Sheet
+  addSheet(name: string): Sheet
   // cloneSheet(sheet: Sheet, name: string): Sheet
 
   // note: return type depends on opts

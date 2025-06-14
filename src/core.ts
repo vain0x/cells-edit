@@ -63,3 +63,18 @@ export function textToSelectedCells(text: string): SelectedCell[] {
 
   return cells
 }
+
+export const createDummyWorkbook = async () => {
+  const workbook = await XlsxPopulate.fromBlankAsync()
+  workbook.addSheet('Sheet2')
+  for (const sheet of workbook.sheets()) {
+    for (let row = 1; row <= 10; row++) {
+      if (row === 1) {
+        sheet.cell(row, 1).value(sheet.name())
+        continue
+      }
+      sheet.cell(row, 9).value('')
+    }
+  }
+  return workbook
+}

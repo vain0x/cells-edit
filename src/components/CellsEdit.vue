@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Workbook } from '../xlsx-populate'
-import { selectedCellsToText, textToSelectedCells, type SelectedCell } from '../core'
+import { createDummyWorkbook, selectedCellsToText, textToSelectedCells, type SelectedCell } from '../core'
 
 const DEBUG = window.location.hostname === 'localhost'
 
@@ -28,6 +28,19 @@ const text = computed<string>({
       selectedCells.value = parsed.sort((a, b) =>
         a.sheet.localeCompare(b.sheet) || a.row - b.row || a.col - b.col
       )
+      for (const cell of selectedCells.value) {
+        if (cell.sheet !== selectedSheet.value) continue
+        const row = cell.row
+        const col = cell.col
+        const target = visibleRows.value.at(row - 1)?.at(col - 1)
+        if (target) {
+          if (cell.formula != null) {
+            target.formula(cell.formula)
+          } else {
+            target.value(cell.value)
+          }
+        }
+      }
       validationError.value = ''
     } catch (err) {
       validationError.value = (err as Error).message
@@ -47,7 +60,7 @@ function onFileSelected(ev: Event) {
     workbook.value = await XlsxPopulate.fromDataAsync(data)
     if (DEBUG) console.log('workbook=', (window as any).workbook = workbook.value)
     if (DEBUG) console.log('sheet=', (window as any).sheet = workbook.value.sheets()?.[0])
-    const firstSheet = workbook.value.sheets()?.[0]?.name() 
+    const firstSheet = workbook.value.sheets()?.[0]?.name()
     selectedSheet.value = firstSheet ?? ''
     visibleRows.value = loadVisibleRows(selectedSheet.value)
   })()
@@ -148,6 +161,13 @@ function toggleCellSelection(row: number, col: number) {
     )
   }
 }
+
+!(async () => {
+  const dummy = await createDummyWorkbook()
+  const bytes = await dummy.outputAsync()
+  const file = new File([bytes], 'untitled.txt')
+  onFileSelected({ target: { files: [file] } } as any)
+})()
 </script>
 
 <template>
@@ -171,7 +191,7 @@ function toggleCellSelection(row: number, col: number) {
     <div class="sheet-main">
       <div class="sheet-table-container">
         <table class="sheet-table">
-          <tr v-for="(row, rowIndex) in visibleRows" :key="rowIndex">
+          <tr v-for="(row, rowIndex) in visibleRows" :key="rowIndex" class="sheet-row">
             <td v-for="(cell, colIndex) in row" :key="colIndex"
               :class="['cell', { selected: isCellSelected(rowIndex + 1, colIndex + 1) }]"
               @click.prevent="toggleCellSelection(rowIndex + 1, colIndex + 1)">
@@ -194,6 +214,8 @@ function toggleCellSelection(row: number, col: number) {
 <style>
 .page-root {
   font-family: sans-serif;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
 }
 
 .controls {
@@ -226,7 +248,7 @@ function toggleCellSelection(row: number, col: number) {
 }
 
 .sheet-table-container {
-  max-height: 400px;
+  max-height: calc(100vh - 425px);
   overflow: auto;
   border: 1px solid #ccc;
 }
@@ -235,6 +257,11 @@ function toggleCellSelection(row: number, col: number) {
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
+}
+
+
+.sheet-row {
+  height: 30px;
 }
 
 .sheet-table .cell {
